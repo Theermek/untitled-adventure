@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Story {
+  id         String      @id @default(cuid())
+  slug       String      @unique
+  title      String
+  summary    String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  chapters   Chapter[]
+  sideQuests SideQuest[]
+}
+
+model Chapter {
+  id         String   @id @default(cuid())
+  storyId    String
+  story      Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  key        String
+  paragraphs String[]
+  isEnding   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  outgoingChoices Choice[] @relation("ChoiceSource")
+  incomingChoices Choice[] @relation("ChoiceTarget")
+
+  @@unique([storyId, key])
+}
+
+model Choice {
+  id              String  @id @default(cuid())
+  label           String
+  order           Int     @default(0)
+  chapterId       String
+  chapter         Chapter @relation("ChoiceSource", fields: [chapterId], references: [id], onDelete: Cascade)
+  targetChapterId String
+  targetChapter   Chapter @relation("ChoiceTarget", fields: [targetChapterId], references: [id], onDelete: Cascade)
+}
+
+model SideQuest {
+  id         String   @id @default(cuid())
+  storyId    String
+  story      Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  key        String
+  title      String
+  paragraphs String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([storyId, key])
+}
